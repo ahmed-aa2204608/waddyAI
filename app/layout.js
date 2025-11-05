@@ -31,7 +31,7 @@ const bukra = localFont({
 
 export default function RootLayout({ children }) {
   return (
-    <html>
+    <html lang="en">
       <body className={`${bukra.variable} font-sans`}>
         <SidebarProvider>
           <AppSidebar />

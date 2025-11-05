@@ -373,12 +373,6 @@ export default function OrderDetailPage() {
       <div className="bg-white border-b px-6 py-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push('/orders')}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
             <h1 className="text-2xl font-semibold">order</h1>
           </div>
           

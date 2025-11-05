@@ -239,7 +239,7 @@ export default function InboxPage() {
 
     // Separate items by status
     const orders = filtered.filter(item => item.status === 'InboxStatus.ORDERS');
-    const notOrders = filtered.filter(item => item.status === 'InboxStatus.NOTORDERS');
+    const notOrders = filtered.filter(item => item.status === 'InboxStatus.NOT_ORDERS');
 
     return { orders, notOrders };
   }, [itemsWithOrders, searchQuery, dateRange]);
