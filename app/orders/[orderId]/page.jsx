@@ -55,6 +55,14 @@ export default function OrderDetailPage() {
   const [deliveryInstructions, setDeliveryInstructions] = useState('');
   const [debounceTimer, setDebounceTimer] = useState(null);
 
+  // Helper function to normalize quantity (remove unnecessary decimals)
+  const normalizeQuantity = (qty) => {
+    const num = parseFloat(qty);
+    if (isNaN(num)) return 0;
+    // If the number is a whole number, return as integer, otherwise keep decimal
+    return num % 1 === 0 ? parseInt(num) : num;
+  };
+
   // Fetch order, order items, and inbox item
   useEffect(() => {
     const fetchData = async () => {
@@ -94,19 +102,39 @@ export default function OrderDetailPage() {
           }
         }
 
+        // Fetch inbox item for customer info and email content
+        let inbox = null;
+        if (orderData.inbox_item_id) {
+          const inboxResponse = await fetch(`https://wadyai.onrender.com/api/v1/inbox/items/${orderData.inbox_item_id}`);
+          if (inboxResponse.ok) {
+            inbox = await inboxResponse.json();
+            setInboxItem(inbox);
+          }
+        }
+
         // Fetch order items
         const itemsResponse = await fetch(`https://wadyai.onrender.com/api/v1/order-items/order/${orderId}`);
         if (itemsResponse.ok) {
           const items = await itemsResponse.json();
-          setOrderItems(items);
-        }
-
-        // Fetch inbox item for customer info and email content
-        if (orderData.inbox_item_id) {
-          const inboxResponse = await fetch(`https://wadyai.onrender.com/api/v1/inbox/items/${orderData.inbox_item_id}`);
-          if (inboxResponse.ok) {
-            const inbox = await inboxResponse.json();
-            setInboxItem(inbox);
+          
+          // Merge AI extracted data from inbox item if available
+          if (inbox?.ai_extracted_items && Array.isArray(inbox.ai_extracted_items)) {
+            const mergedItems = items.map((item, idx) => {
+              const aiItem = inbox.ai_extracted_items[idx];
+              if (aiItem) {
+                return {
+                  ...item,
+                  unit: aiItem.unit || item.unit || 'each',
+                  ai_confidence_score: aiItem.ai_confidence_score,
+                  ai_parsed_text: aiItem.ai_parsed_text,
+                  quantity: normalizeQuantity(aiItem.quantity || item.quantity || 0),
+                };
+              }
+              return item;
+            });
+            setOrderItems(mergedItems);
+          } else {
+            setOrderItems(items);
           }
         }
 
@@ -176,7 +204,7 @@ export default function OrderDetailPage() {
   // Handle quantity change
   const handleQuantityChange = (itemIndex, newQuantity) => {
     const updatedItems = [...orderItems];
-    const quantity = parseInt(newQuantity) || 0;
+    const quantity = normalizeQuantity(newQuantity);
     updatedItems[itemIndex] = {
       ...updatedItems[itemIndex],
       quantity: quantity,
@@ -187,9 +215,10 @@ export default function OrderDetailPage() {
   // Increment quantity
   const handleIncrementQuantity = (itemIndex) => {
     const updatedItems = [...orderItems];
+    const currentQty = normalizeQuantity(updatedItems[itemIndex].quantity || 0);
     updatedItems[itemIndex] = {
       ...updatedItems[itemIndex],
-      quantity: (updatedItems[itemIndex].quantity || 0) + 1,
+      quantity: currentQty + 1,
     };
     setOrderItems(updatedItems);
   };
@@ -197,7 +226,7 @@ export default function OrderDetailPage() {
   // Decrement quantity
   const handleDecrementQuantity = (itemIndex) => {
     const updatedItems = [...orderItems];
-    const currentQty = updatedItems[itemIndex].quantity || 0;
+    const currentQty = normalizeQuantity(updatedItems[itemIndex].quantity || 0);
     if (currentQty > 0) {
       updatedItems[itemIndex] = {
         ...updatedItems[itemIndex],
@@ -546,7 +575,8 @@ export default function OrderDetailPage() {
                         <Input
                           type="number"
                           min="0"
-                          value={item.quantity || 0}
+                          step="any"
+                          value={normalizeQuantity(item.quantity || 0)}
                           onChange={(e) => handleQuantityChange(idx, e.target.value)}
                           className="w-20 text-center font-medium border-0 bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
@@ -578,7 +608,7 @@ export default function OrderDetailPage() {
                         </div>
                         <div className="mt-2 text-xs text-gray-500">
                           <span>units</span>
-                          <span className="ml-2 font-medium text-gray-900">{item.quantity}</span>
+                          <span className="ml-2 font-medium text-gray-900">{normalizeQuantity(item.quantity || 0)}</span>
                         </div>
                       </div>
                     )}

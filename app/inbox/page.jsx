@@ -250,14 +250,7 @@ export default function InboxPage() {
       <div className='px-6 py-4 bg-white border-b'>
         <div className='flex items-center justify-between mb-4'>
           <h1 className='text-3xl font-semibold'>inbox</h1>
-          <Button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <RefreshCcw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Refreshing...' : 'Refresh Inbox'}
-          </Button>
+
         </div>
         <div className='flex items-center gap-3'>
           <div className='relative flex-1 max-w-md'>
